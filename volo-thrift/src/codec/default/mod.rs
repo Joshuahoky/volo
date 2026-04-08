@@ -216,6 +216,7 @@ impl<D: ZeroCopyDecoder, R: AsyncRead + AsyncExt + Unpin + Send + Sync + 'static
         &mut self,
         cx: &mut Cx,
     ) -> Result<Option<ThriftMessage<Msg>>, ThriftException> {
+        cx.stats_mut().record_wait_read_start_at();
         let buf = match self.reader.fill_buf().await {
             Ok(buf) => buf,
             Err(e) => {
@@ -235,6 +236,7 @@ impl<D: ZeroCopyDecoder, R: AsyncRead + AsyncExt + Unpin + Send + Sync + 'static
             }
         };
 
+        cx.stats_mut().record_wait_read_end_at();
         if buf.is_empty() {
             tracing::trace!(
                 "[VOLO] thrift codec decode message EOF, rpcinfo: {:?}",

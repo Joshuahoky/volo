@@ -119,6 +119,7 @@ where
             ))
         })?;
         let oneway = cx.message_type == TMessageType::OneWay;
+        cx.common_stats.record_rpc_start_at();
         cx.stats.record_make_transport_start_at();
         let mut transport = self.make_transport.call((target, Ver::PingPong)).await?;
         cx.stats.record_make_transport_end_at();
@@ -132,6 +133,7 @@ where
                         helper.reuse().await;
                     }
                 }
+                cx.common_stats.record_rpc_end_at();
                 return Err(crate::ClientError::Transport(
                     pilota::thrift::TransportException::from(io::Error::new(
                         io::ErrorKind::UnexpectedEof,
@@ -157,7 +159,7 @@ where
         if cx.transport.should_reuse && resp.is_ok() {
             transport.reuse().await;
         }
-
+        cx.common_stats.record_rpc_end_at();
         resp
     }
 }

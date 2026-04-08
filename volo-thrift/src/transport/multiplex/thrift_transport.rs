@@ -276,6 +276,12 @@ where
                         if let Some(s) = new_cx.common_stats.read_size() {
                             cx.common_stats.set_read_size(s);
                         }
+                        if let Some(t) = new_cx.common_stats.wait_read_start_at() {
+                            cx.common_stats.set_wait_read_start_at(t);
+                        }
+                        if let Some(t) = new_cx.common_stats.wait_read_end_at() {
+                            cx.common_stats.set_wait_read_end_at(t);
+                        }
                         Ok(Some(msg))
                     }
                 },

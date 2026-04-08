@@ -62,6 +62,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                             )
                                             .await
                                         {
+                                            cx.common_stats.record_rpc_end_at();
                                             stat_tracer.iter().for_each(|f| f(&cx));
                                             if should_log(&e) {
                                                 // log it
@@ -73,6 +74,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                             }
                                             return;
                                         }
+                                        cx.common_stats.record_rpc_end_at();
                                         stat_tracer.iter().for_each(|f| f(&cx));
                                         if cx.encode_conn_reset() {
                                             return;
@@ -97,6 +99,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                             .encode::<DummyMessage, ServerContext>(&mut cx, msg)
                                             .await
                                         {
+                                            cx.common_stats.record_rpc_end_at();
                                             stat_tracer.iter().for_each(|f| f(&cx));
                                             if should_log(&e) {
                                                 // log it
@@ -108,6 +111,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                             }
                                             return;
                                         }
+                                        cx.common_stats.record_rpc_end_at();
                                         stat_tracer.iter().for_each(|f| f(&cx));
                                         return;
                                     }
@@ -139,6 +143,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                         .caller_mut()
                         .set_address(peer_addr.clone());
                 }
+                cx.common_stats.record_rpc_start_at();
 
                 tokio::select! {
                     _ = &mut notified => {
@@ -146,6 +151,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                             "[VOLO] close conn by notified, peer_addr: {:?}",
                             peer_addr
                         );
+                        cx.common_stats.record_rpc_end_at();
                         return;
                     }
                     // receives a message
@@ -167,6 +173,7 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                      peer_addr: {:?}",
                                     peer_addr
                                 );
+                                cx.common_stats.record_rpc_end_at();
                                 return;
                             }
                             Err(e) => {
@@ -184,7 +191,10 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                             thrift_exception_to_application_exception(e),
                                         ),
                                     );
+                                    cx.common_stats.record_rpc_end_at();
                                     let _ = error_send_tx.send((cx, msg)).await;
+                                } else {
+                                    cx.common_stats.record_rpc_end_at();
                                 }
                                 return;
                             }
@@ -218,6 +228,9 @@ pub async fn serve<Svc, Req, Resp, E, D>(
                                         );
                                         let mi = metainfo::METAINFO.with(|m| m.take());
                                         let _ = send_tx.send((mi, cx, msg)).await;
+                                    } else {
+                                        // OneWay: no write, so RPCFinish here is correct.
+                                        cx.common_stats.record_rpc_end_at();
                                     }
                                 })
                                 .await;

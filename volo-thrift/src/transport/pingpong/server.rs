@@ -55,12 +55,16 @@ pub async fn serve<Svc, Req, Resp, E, D, SP>(
                     cx.rpc_info.caller_mut().set_address(peer_addr.clone());
                 }
 
+                cx.common_stats.record_rpc_start_at();
+
                 let msg = tokio::select! {
                     _ = &mut notified => {
                         tracing::trace!(
                             "[VOLO] close conn by notified, peer_addr: {:?}",
                             peer_addr,
                         );
+                        cx.common_stats.record_rpc_end_at();
+                        stat_tracer.iter().for_each(|f| f(&cx));
                         break;
                     },
                     out = decoder.decode(&mut cx) => out
@@ -120,11 +124,13 @@ pub async fn serve<Svc, Req, Resp, E, D, SP>(
                                             e, cx, peer_addr
                                         );
                                     }
+                                    cx.common_stats.record_rpc_end_at();
                                     stat_tracer.iter().for_each(|f| f(&cx));
                                     return Err(());
                                 }
                             }
                             if cx.transport.is_conn_reset() {
+                                cx.common_stats.record_rpc_end_at();
                                 return Err(());
                             }
                         }
@@ -137,6 +143,8 @@ pub async fn serve<Svc, Req, Resp, E, D, SP>(
                                  peer_addr: {:?}",
                                 peer_addr
                             );
+                            cx.common_stats.record_rpc_end_at();
+                            stat_tracer.iter().for_each(|f| f(&cx));
                             return Err(());
                         }
                         Err(e) => {
@@ -166,10 +174,12 @@ pub async fn serve<Svc, Req, Resp, E, D, SP>(
                                     }
                                 }
                             }
+                            cx.common_stats.record_rpc_end_at();
                             stat_tracer.iter().for_each(|f| f(&cx));
                             return Err(());
                         }
                     }
+                    cx.common_stats.record_rpc_end_at();
                     stat_tracer.iter().for_each(|f| f(&cx));
 
                     metainfo::METAINFO.with(|mi| {

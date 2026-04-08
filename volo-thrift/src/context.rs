@@ -79,6 +79,12 @@ pub struct CommonStats {
 
     // biz error
     biz_error: Option<BizError>,
+
+    wait_read_start_at: Option<DateTime<Local>>,
+    wait_read_end_at: Option<DateTime<Local>>,
+
+    rpc_start_at: Option<DateTime<Local>>,
+    rpc_end_at: Option<DateTime<Local>>,
 }
 
 impl CommonStats {
@@ -90,6 +96,10 @@ impl CommonStats {
     stat_impl!(encode_end_at);
     stat_impl!(write_start_at);
     stat_impl!(write_end_at);
+    stat_impl!(wait_read_start_at);
+    stat_impl!(wait_read_end_at);
+    stat_impl!(rpc_start_at);
+    stat_impl!(rpc_end_at);
 
     #[inline]
     pub fn read_size(&self) -> Option<usize> {

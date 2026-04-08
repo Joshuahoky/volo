@@ -353,7 +353,7 @@ impl<S, L, Req, MkC, SP> Server<S, L, Req, MkC, SP> {
                                 Err(e) => return Err(Box::new(e))
                             };
                         }
-                        Err(e) => return Err(Box::new(e)),
+                        Err(e) => return Err(e.into()),
                     }
                 }
             }
